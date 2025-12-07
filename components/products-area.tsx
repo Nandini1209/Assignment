@@ -38,27 +38,37 @@ export default function ProductsArea({ initialProducts = [] }: { initialProducts
 
   return (
     <div>
-      <section className="mb-6 p-4 border rounded-md">
-        <div className="flex flex-col md:flex-row gap-3 md:items-end">
+      {/* Filters Section */}
+      <section className="mb-8 p-6 bg-white/70 backdrop-blur-sm border border-slate-200 rounded-xl shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">Filter Products</h2>
+        <div className="flex flex-col md:flex-row gap-4 md:items-end">
           <div className="flex-1">
-            <label className="block text-sm font-medium">Bank</label>
-            <select className="w-full mt-1 p-2 border rounded" value={bank} onChange={(e) => setBank(e.target.value)}>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Bank</label>
+            <select 
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+              value={bank} 
+              onChange={(e) => setBank(e.target.value)}
+            >
               {banks.map((b) => <option key={b} value={b}>{b || "Any bank"}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Type</label>
-            <select className="mt-1 p-2 border rounded" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Type</label>
+            <select 
+              className="px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+              value={typeFilter} 
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
               {types.map((t) => <option key={t} value={t}>{t || "Any type"}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Max APR</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Max APR (%)</label>
             <input
               type="number"
-              className="mt-1 p-2 border rounded w-28"
+              className="px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 w-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               value={maxApr}
               onChange={(e) => setMaxApr(e.target.value === "" ? "" : Number(e.target.value))}
               placeholder="e.g. 12"
@@ -66,10 +76,10 @@ export default function ProductsArea({ initialProducts = [] }: { initialProducts
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Min Credit Score</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Min Credit Score</label>
             <input
               type="number"
-              className="mt-1 p-2 border rounded w-28"
+              className="px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 w-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               value={minCredit}
               onChange={(e) => setMinCredit(e.target.value === "" ? "" : Number(e.target.value))}
               placeholder="e.g. 650"
@@ -79,7 +89,7 @@ export default function ProductsArea({ initialProducts = [] }: { initialProducts
           <div>
             <button
               type="button"
-              className="mt-1 px-4 py-2 bg-gray-200 rounded"
+              className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium rounded-lg transition-colors duration-200 shadow-sm"
               onClick={() => {
                 setBank("");
                 setTypeFilter("");
@@ -93,11 +103,15 @@ export default function ProductsArea({ initialProducts = [] }: { initialProducts
         </div>
       </section>
 
+      {/* Products Grid */}
       <section>
         {products.length === 0 ? (
-          <div className="text-center text-gray-600">No products match your filters.</div>
+          <div className="text-center py-12 px-4 bg-white/50 backdrop-blur-sm border border-slate-200 rounded-xl">
+            <p className="text-slate-500 text-lg">No products match your filters.</p>
+            <p className="text-slate-400 text-sm mt-2">Try adjusting your search criteria</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((p: Product) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
