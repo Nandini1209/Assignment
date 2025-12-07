@@ -1,49 +1,46 @@
-// components/product-card.tsx
 "use client";
-import React, { useState } from "react";
-import ChatSheet from "@/components/chat-sheet"; // adjust path if needed
 
-export default function ProductCard({ product }: { product: any }) {
-  const [openChat, setOpenChat] = useState(false);
+import Link from "next/link";
+
+export type Product = {
+  id: string;
+  name: string;
+  apr?: number;
+  bank?: string;
+  description?: string;
+};
+
+type Props = {
+  product: Product;
+};
+
+export default function ProductCard({ product }: Props) {
+  if (!product?.id) {
+    console.warn("ProductCard: missing product.id", product);
+    return null;
+  }
 
   return (
-    <div className="border rounded p-4 shadow-sm bg-white">
-      <h3 className="text-xl font-semibold">{product.name}</h3>
-      <p className="text-sm text-slate-600">{product.bank}</p>
+    <Link
+      href={`/product/${product.id}`}
+      className="block border rounded-lg p-4 shadow-sm bg-white hover:shadow-md transition-shadow"
+    >
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">{product.name}</h2>
 
-      <div className="mt-2 text-sm">
-        <div>APR: {product.rate_apr}%</div>
-        <div>Min Income: ₹{product.min_income ?? 0}</div>
-        <div>Credit Score: {product.min_credit_score}</div>
-      </div>
+        <p className="text-slate-600 text-sm">
+          APR: <span className="font-medium">{product.apr ?? "N/A"}%</span>
+        </p>
 
-      <p className="mt-2 text-sm text-slate-500">{product.summary}</p>
+        {product.bank && <p className="text-xs text-slate-500">Bank: {product.bank}</p>}
 
-      {/* Buttons */}
-      <div className="mt-4 flex gap-2">
         <button
-          onClick={() => setOpenChat(true)}
-          className="bg-blue-600 text-white px-3 py-2 rounded"
+          className="mt-3 w-fit px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={(e) => e.preventDefault()} // prevent double navigation inside Link
         >
-          Ask about this product
+          View Details
         </button>
-
-        <a
-          className="border rounded px-3 py-2"
-          href={`/products/${product.id}`}
-        >
-          View details
-        </a>
       </div>
-
-      {/* ChatSheet modal/sheet */}
-      {openChat && (
-        <ChatSheet
-          productId={product.id}
-          productName={product.name}
-          onClose={() => setOpenChat(false)}
-        />
-      )}
-    </div>
+    </Link>
   );
 }

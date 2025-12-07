@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LoanMate — Loan Products Dashboard
 
-## Getting Started
+A small Next.js + Supabase + OpenAI demo app that shows loan products, allows filtering and quick AI-powered Q&A about each product.
 
-First, run the development server:
+This README includes:
+- How to run locally
+- Where to put the new `TopProducts` widget
+- Notes about env variables and deployment
 
-```bash
+## Features
+- Product listing with filters (bank, APR, income, credit score)
+- Top 5 products widget (server-side fetch)
+- Product details pages (`/products/[id]`)
+- In-product AI chat (powered by OpenAI)
+- Supabase as data store
+- Responsive UI using Tailwind CSS + shadcn-style UI components
+
+## Local setup
+
+1. Install dependencies:
+npm install
+
+## Run dev server:
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Open https://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ ## Files of interest
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+app/page.tsx — Homepage: add the TopProducts widget here
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+components/TopProducts.tsx — Top 5 server-side widget (fetches from Supabase)
 
-## Learn More
+components/product-card.tsx — Product card (UI + chat trigger)
 
-To learn more about Next.js, take a look at the following resources:
+app/products/[id]/page.tsx — Product detail page
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+app/api/products/ai/ask/route.ts — AI endpoint
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+lib/supabase.ts — supabase client wrapper
