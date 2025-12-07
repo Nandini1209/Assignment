@@ -87,15 +87,22 @@ Keep responses short and factual.
       );
     }
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      choices?: Array<{
+        message?: {
+          content?: string;
+        };
+      }>;
+    };
     const assistantMsg =
       data.choices?.[0]?.message?.content || "No answer available.";
 
     return NextResponse.json({ answer: assistantMsg, product: productData });
   } catch (err) {
     console.error(err);
+    const errorMessage = err instanceof Error ? err.message : "Server error";
     return NextResponse.json(
-      { error: "Server error" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 export const metadata: Metadata = {
   title: "Loan Products",
@@ -14,9 +15,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-full bg-linear-to-r from-slate-50 via-blue-50 to-indigo-50 antialiased">
-        <div className="min-h-full">
-          {children}
-        </div>
+        <AuthProvider>
+          <div className="min-h-full">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
