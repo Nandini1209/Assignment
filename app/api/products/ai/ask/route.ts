@@ -1,7 +1,7 @@
 // app/api/products/ai/ask/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { supabaseServer } from "@/lib/supabase-server";
+import { createClient } from "@/lib/supabase/server";
 
 const RequestSchema = z.object({
   productId: z.string().uuid(),
@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     const { productId, message, history = [] } = parsed.data;
 
     // Fetch product
-    const { data: productData, error: pErr } = await supabaseServer
+    const supabase = await createClient();
+    const { data: productData, error: pErr } = await supabase
       .from("products")
       .select(
         "id, name, bank, type, rate_apr, min_income, min_credit_score, tenure_min_months, tenure_max_months, summary, faq"
@@ -87,15 +88,22 @@ Keep responses short and factual.
       );
     }
 
-    const data = await resp.json();
+    const data = (await resp.json()) as {
+      choices?: Array<{
+        message?: {
+          content?: string;
+        };
+      }>;
+    };
     const assistantMsg =
       data.choices?.[0]?.message?.content || "No answer available.";
 
     return NextResponse.json({ answer: assistantMsg, product: productData });
   } catch (err) {
     console.error(err);
+    const errorMessage = err instanceof Error ? err.message : "Server error";
     return NextResponse.json(
-      { error: "Server error" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
