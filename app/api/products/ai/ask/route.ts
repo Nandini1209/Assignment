@@ -1,95 +1,102 @@
-
-
+// app/api/products/ai/ask/route.ts
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { z } from "zod";
+import { supabaseServer } from "@/lib/supabase-server";
 
-type Body = { message?: string; productId?: string | null; userId?: string | null };
+const RequestSchema = z.object({
+  productId: z.string().uuid(),
+  message: z.string().min(1),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string(),
+      })
+    )
+    .optional(),
+});
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body: Body = await request.json();
-    const message = (body.message || "").toString().trim();
-    const productId = body.productId ?? null;
-    const userId = body.userId ?? null; // optional, if you track logged in user
+    const body = await req.json();
+    const parsed = RequestSchema.safeParse(body);
 
-    if (!message) {
-      return NextResponse.json({ error: "No message provided" }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid request" },
+        { status: 400 }
+      );
     }
 
-    // 1) Optionally fetch product summary to give to the model
-    let productSummary = "";
-    if (productId) {
-      const { data: productData, error: pErr } = await supabase
-        .from("products")
-        .select("id, name, summary, rate_apr, min_income")
-        .eq("id", productId)
-        .single();
+    const { productId, message, history = [] } = parsed.data;
 
-      if (!pErr && productData) {
-        productSummary = `Product: ${productData.name}\nAPR: ${productData.rate_apr}\nMinimum income: ${productData.min_income}\nSummary: ${productData.summary}`;
-      }
+    // Fetch product
+    const { data: productData, error: pErr } = await supabaseServer
+      .from("products")
+      .select(
+        "id, name, bank, type, rate_apr, min_income, min_credit_score, tenure_min_months, tenure_max_months, summary, faq"
+      )
+      .eq("id", productId)
+      .single();
+
+    if (pErr || !productData) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
     }
 
-    // 2) Save user message to Supabase (role = user)
-    await supabase.from("ai_chat_messages").insert({
-      user_id: userId,
-      product_id: productId,
-      role: "user",
-      content: message,
-    });
+    // System message + grounding
+    const systemPrompt = `
+You are a helpful assistant. 
+Only answer questions using the product data provided below. 
+If the answer is not in the product data, say "I don't have that information."
+Keep responses short and factual.
+    `.trim();
 
-    // 3) Create prompt for OpenAI (include product context)
-    const systemPrompt = `You are a helpful assistant for a loans site. Answer concisely and include APR, eligibility or next steps when relevant. When product context is available include the product name and APR.`;
+    const productBlock = `PRODUCT_DATA: ${JSON.stringify(productData)}`;
 
-    const userPrompt = productSummary
-      ? `Product context:\n${productSummary}\n\nUser question:\n${message}`
-      : `User question:\n${message}`;
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "system", content: productBlock },
+      ...history.map((h) => ({ role: h.role, content: h.content })),
+      { role: "user", content: message },
+    ];
 
-    // 4) Call OpenAI Chat Completions (gpt-5.1 or whichever engine)
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      return NextResponse.json({ error: "OPENAI_API_KEY missing on server" }, { status: 500 });
-    }
-
-    const openaiResp = await fetch("https://api.openai.com/v1/chat/completions", {
+    // Call OpenAI
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-5.1", // change to model you have access to
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.2,
-        max_tokens: 600,
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        messages,
+        max_tokens: 500,
+        temperature: 0,
       }),
     });
 
-    if (!openaiResp.ok) {
-      const body = await openaiResp.text();
-      console.error("OpenAI error:", openaiResp.status, body);
-      return NextResponse.json({ error: "OpenAI request failed" }, { status: 500 });
+    if (!resp.ok) {
+      const bodyText = await resp.text();
+      console.error("OpenAI error:", bodyText);
+      return NextResponse.json(
+        { error: "Failed to get response from AI" },
+        { status: 500 }
+      );
     }
 
-    const openaiJson = await openaiResp.json();
-    // most responses: openaiJson.choices[0].message.content
-    const assistantReply = openaiJson?.choices?.[0]?.message?.content?.trim() ?? "Sorry, I couldn't generate a reply.";
+    const data = await resp.json();
+    const assistantMsg =
+      data.choices?.[0]?.message?.content || "No answer available.";
 
-    // 5) Save assistant reply to Supabase
-    await supabase.from("ai_chat_messages").insert({
-      user_id: userId,
-      product_id: productId,
-      role: "assistant",
-      content: assistantReply,
-    });
-
-    // 6) Return reply (and productSummary if needed by client)
-    return NextResponse.json({ reply: assistantReply, productSummary });
+    return NextResponse.json({ answer: assistantMsg, product: productData });
   } catch (err) {
-    console.error("AI route error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
 }

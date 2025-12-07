@@ -1,1 +1,9 @@
-@import "tailwindcss";
+/* app/globals.css — replace the current file with exactly this */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* optional: your global styles below */
+html, body {
+  height: 100%;
+}
