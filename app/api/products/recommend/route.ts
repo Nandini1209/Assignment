@@ -1,7 +1,7 @@
 // app/api/products/recommend/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { supabaseServer } from "@/lib/supabase-server";
+import { createClient } from "@/lib/supabase/server";
 
 const RequestSchema = z.object({
   income: z.string().min(1),
@@ -24,7 +24,8 @@ export async function POST(req: Request) {
     const { income, occupation, purpose } = parsed.data;
 
     // Fetch all products
-    const { data: allProducts, error: pErr } = await supabaseServer
+    const supabase = await createClient();
+    const { data: allProducts, error: pErr } = await supabase
       .from("products")
       .select("*");
 

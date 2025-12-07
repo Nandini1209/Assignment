@@ -1,7 +1,7 @@
 // app/product/[id]/page.tsx
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { supabaseServer } from "@/lib/supabase-server";
+import { createClient } from "@/lib/supabase/server";
 import ProductDetailsClient from "@/components/product-details-client";
 import type { Product } from "@/types/product";
 
@@ -13,7 +13,8 @@ export default async function ProductDetailPage({ params }: Props) {
   const { id } = await params;
 
   // Fetch product details
-  const { data: product, error } = await supabaseServer
+  const supabase = await createClient();
+  const { data: product, error } = await supabase
     .from("products")
     .select("*")
     .eq("id", id)
